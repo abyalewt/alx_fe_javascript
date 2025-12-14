@@ -126,18 +126,15 @@ async function fetchQuotesFromServer() {
 async function postQuoteToServer(quote) {
   try {
     const response = await fetch(SERVER_POST_URL, {
-      // Mandatorily required POST parameters
       method: "POST",
       headers: {
-        // Must specify the data type being sent
         "Content-Type": "application/json",
       },
-      // Convert the JavaScript object into a JSON string for the body
       body: JSON.stringify({
         title: quote.text,
         body: `Category: ${quote.category}`,
-        userId: 1, // Mock user ID
-        localId: quote.id, // Send local ID for tracking
+        userId: 1,
+        localId: quote.id,
       }),
     });
 
@@ -147,10 +144,8 @@ async function postQuoteToServer(quote) {
 
     const data = await response.json();
 
-    // JSONPlaceholder returns the new resource with an ID
     console.log("Post successful. Server response:", data);
 
-    // In a real app, you would use data.id to update the local quote's ID
     displayStatus(
       `Quote posted to server successfully! (Mock ID: ${data.id})`,
       true
@@ -164,14 +159,15 @@ async function postQuoteToServer(quote) {
 }
 
 // =========================================================
-// Syncing and Conflict Resolution
+// Syncing and Conflict Resolution (Renamed to syncQuotes)
 // =========================================================
 
 /**
  * Executes the data sync process: fetches server data, resolves conflicts, and saves locally.
  */
-async function syncData() {
-  displayStatus("Syncing data with server...", false);
+async function syncQuotes() {
+  // Function renamed from syncData to syncQuotes
+  displayStatus("Syncing quotes with server...", false);
   syncButton.disabled = true;
   let localQuoteCount = quotes.length;
   let mergeCount = 0;
@@ -289,7 +285,7 @@ function restoreFilter() {
 }
 
 // =========================================================
-// Quote Management Functions (Updated to POST)
+// Quote Management Functions
 // =========================================================
 
 async function addQuote() {
@@ -305,7 +301,6 @@ async function addQuote() {
       id: `local-${Date.now()}`,
     };
 
-    // 1. Add locally first for immediate user feedback
     quotes.push(newQuote);
     saveQuotes();
     populateCategories();
@@ -319,13 +314,10 @@ async function addQuote() {
     );
     filterQuotes();
 
-    // 2. Attempt to POST data to the server
+    // Attempt to POST data to the server
     const postSuccess = await postQuoteToServer(newQuote);
 
-    if (postSuccess) {
-      // If post succeeds, the sync status will update in postQuoteToServer
-    } else {
-      // If post fails, tell the user they need to sync later
+    if (!postSuccess) {
       displayStatus("Post failed. Please try 'Sync Now' later.", false);
     }
   } else {
@@ -435,13 +427,13 @@ document.addEventListener("DOMContentLoaded", () => {
   filterQuotes();
 
   // 2. Attach Sync Event Listener
-  syncButton.addEventListener("click", syncData);
+  syncButton.addEventListener("click", syncQuotes); // Updated listener
 
   // 3. Implement Periodic Sync
-  setInterval(syncData, SYNC_INTERVAL);
+  setInterval(syncQuotes, SYNC_INTERVAL); // Updated interval caller
 
   // Initial sync check on load
-  syncData();
+  syncQuotes(); // Updated initial call
 });
 
 // Other Event Listeners:
