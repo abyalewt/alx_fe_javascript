@@ -83,30 +83,31 @@ function updateLastViewedDisplay() {
 }
 
 // =========================================================
-// Step 2: Filtering Logic
+// Step 2: Filtering Logic (Refactored populateCategories)
 // =========================================================
 
 /**
  * Populates the category filter dropdown with unique categories from the quotes array.
  */
 function populateCategories() {
-  // 1. Get unique categories
-  const categories = ["all"]; // Start with 'all'
-  quotes.forEach((quote) => {
-    if (quote.category && !categories.includes(quote.category)) {
-      categories.push(quote.category);
-    }
-  });
+  // 1. Use map() to create an array of all category strings.
+  const allCategories = quotes.map((quote) => quote.category);
 
-  // 2. Clear existing options (except 'All Categories')
+  // 2. Use Set and the spread operator to get only unique categories.
+  const uniqueCategories = [...new Set(allCategories)];
+
+  // 3. Clear existing options
   categoryFilter.innerHTML = '<option value="all">All Categories</option>';
 
-  // 3. Populate the dropdown
-  categories.slice(1).forEach((category) => {
-    const option = document.createElement("option");
-    option.value = category;
-    option.textContent = category;
-    categoryFilter.appendChild(option);
+  // 4. Populate the dropdown
+  uniqueCategories.sort().forEach((category) => {
+    if (category) {
+      // Ensure category is not null/empty
+      const option = document.createElement("option");
+      option.value = category;
+      option.textContent = category;
+      categoryFilter.appendChild(option);
+    }
   });
 }
 
@@ -120,6 +121,7 @@ function filterQuotes() {
   localStorage.setItem("lastSelectedFilter", selectedCategory);
 
   // Get the quotes that match the filter (or all quotes)
+  // The filter() method is still necessary here to select based on a condition
   const filteredQuotes =
     selectedCategory === "all"
       ? quotes
@@ -130,7 +132,6 @@ function filterQuotes() {
 
   if (filteredQuotes.length === 0) {
     quoteDisplay.innerHTML = `<p>No quotes found for category: ${selectedCategory}.</p>`;
-    // Since no quote is displayed, we don't update session storage here
     return;
   }
 
@@ -275,7 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 1. Load data from local storage
   loadQuotes();
 
-  // 2. Populate the filter dropdown based on loaded data
+  // 2. Populate the filter dropdown based on loaded data (uses map())
   populateCategories();
 
   // 3. Restore the filter selection from local storage
