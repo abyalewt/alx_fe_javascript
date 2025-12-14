@@ -5,8 +5,9 @@
 // Global array to hold quotes
 let quotes = [];
 
-// Simulate a server endpoint to fetch initial/synced data
-const SERVER_DATA_URL = "https://jsonplaceholder.typicode.com/posts?_limit=5";
+// Simulate a server endpoint for fetching and posting
+const SERVER_FETCH_URL = "https://jsonplaceholder.typicode.com/posts?_limit=5";
+const SERVER_POST_URL = "https://jsonplaceholder.typicode.com/posts"; // Endpoint for POST
 const SYNC_INTERVAL = 30000; // Sync every 30 seconds (30000ms)
 
 // Initial/Fallback quotes (used only if local storage is empty and server fails)
@@ -79,35 +80,7 @@ function updateLastViewedDisplay() {
 }
 
 // =========================================================
-// Step 1: Simulate Server Interaction (New Function)
-// =========================================================
-
-/**
- * Fetches data from the simulated server and converts it to quote format.
- * @returns {Promise<Array<Object>>} A promise that resolves to an array of quote objects.
- */
-async function fetchQuotesFromServer() {
-  const response = await fetch(SERVER_DATA_URL);
-  if (!response.ok) {
-    throw new Error(`Server response not OK (Status: ${response.status})`);
-  }
-
-  const serverPosts = await response.json();
-
-  // Map server posts (id, title, body) into quote objects (id, text, category)
-  const serverQuotes = serverPosts.map((post) => ({
-    // Capitalize the title and add a period for quote appearance
-    text: post.title.charAt(0).toUpperCase() + post.title.slice(1) + ".",
-    // Assign a category based on the userId for variety
-    category: post.userId % 2 === 0 ? "Server-A" : "Server-B",
-    id: `server-${post.id}`,
-  }));
-
-  return serverQuotes;
-}
-
-// =========================================================
-// Step 2 & 3: Syncing and Conflict Resolution (Updated)
+// Server Interaction (GET & POST)
 // =========================================================
 
 function displayStatus(message, success = true) {
@@ -126,6 +99,75 @@ function displayStatus(message, success = true) {
 }
 
 /**
+ * Fetches data from the simulated server (GET).
+ */
+async function fetchQuotesFromServer() {
+  const response = await fetch(SERVER_FETCH_URL);
+  if (!response.ok) {
+    throw new Error(`Server response not OK (Status: ${response.status})`);
+  }
+
+  const serverPosts = await response.json();
+
+  // Map server posts (id, title, body) into quote objects (id, text, category)
+  const serverQuotes = serverPosts.map((post) => ({
+    text: post.title.charAt(0).toUpperCase() + post.title.slice(1) + ".",
+    category: post.userId % 2 === 0 ? "Server-A" : "Server-B",
+    id: `server-${post.id}`,
+  }));
+
+  return serverQuotes;
+}
+
+/**
+ * Simulates posting a new quote to the server (POST).
+ * @param {object} quote - The quote object to send.
+ */
+async function postQuoteToServer(quote) {
+  try {
+    const response = await fetch(SERVER_POST_URL, {
+      // Mandatorily required POST parameters
+      method: "POST",
+      headers: {
+        // Must specify the data type being sent
+        "Content-Type": "application/json",
+      },
+      // Convert the JavaScript object into a JSON string for the body
+      body: JSON.stringify({
+        title: quote.text,
+        body: `Category: ${quote.category}`,
+        userId: 1, // Mock user ID
+        localId: quote.id, // Send local ID for tracking
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to post quote. Status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // JSONPlaceholder returns the new resource with an ID
+    console.log("Post successful. Server response:", data);
+
+    // In a real app, you would use data.id to update the local quote's ID
+    displayStatus(
+      `Quote posted to server successfully! (Mock ID: ${data.id})`,
+      true
+    );
+    return true;
+  } catch (error) {
+    console.error("POST Error:", error);
+    displayStatus(`Error posting quote: ${error.message}`, false);
+    return false;
+  }
+}
+
+// =========================================================
+// Syncing and Conflict Resolution
+// =========================================================
+
+/**
  * Executes the data sync process: fetches server data, resolves conflicts, and saves locally.
  */
 async function syncData() {
@@ -135,7 +177,7 @@ async function syncData() {
   let mergeCount = 0;
 
   try {
-    const serverQuotes = await fetchQuotesFromServer(); // Call the new function
+    const serverQuotes = await fetchQuotesFromServer();
 
     // --- Conflict Resolution Strategy: Server Data Takes Precedence ---
 
@@ -144,24 +186,20 @@ async function syncData() {
       return map;
     }, {});
 
-    // 1. Iterate through server quotes and merge/replace local data
     serverQuotes.forEach((serverQuote) => {
       const index = quotes.findIndex((q) => q.id === serverQuote.id);
 
       if (index !== -1) {
-        // Conflict: IDs match. Server takes precedence (replace local version).
+        // Conflict: Server takes precedence (replace local version).
         quotes[index] = serverQuote;
         mergeCount++;
       } else {
-        // No conflict: New quote from server. Add it.
+        // New quote from server. Add it.
         quotes.push(serverQuote);
       }
     });
 
-    // 2. Save the merged data
     saveQuotes();
-
-    // 3. Update UI
     populateCategories();
     filterQuotes();
 
@@ -185,7 +223,7 @@ async function syncData() {
 }
 
 // =========================================================
-// Filtering Logic
+// Filtering and UI Logic
 // =========================================================
 
 function populateCategories() {
@@ -251,25 +289,24 @@ function restoreFilter() {
 }
 
 // =========================================================
-// Quote Management Functions
+// Quote Management Functions (Updated to POST)
 // =========================================================
 
-function addQuote() {
+async function addQuote() {
   const newQuoteText = document.getElementById("newQuoteText").value.trim();
   const newQuoteCategory = document
     .getElementById("newQuoteCategory")
     .value.trim();
 
   if (newQuoteText && newQuoteCategory) {
-    // Create a unique local ID for the new quote
     const newQuote = {
       text: newQuoteText,
       category: newQuoteCategory,
-      id: `local-${Date.now()}`, // Use timestamp for a unique local ID
+      id: `local-${Date.now()}`,
     };
 
+    // 1. Add locally first for immediate user feedback
     quotes.push(newQuote);
-
     saveQuotes();
     populateCategories();
 
@@ -277,11 +314,20 @@ function addQuote() {
     document.getElementById("newQuoteCategory").value = "";
 
     displayStatus(
-      `Local quote added: ${newQuote.category}. Sync to save permanently.`,
+      `Quote added locally. Attempting to post to server...`,
       false
     );
-
     filterQuotes();
+
+    // 2. Attempt to POST data to the server
+    const postSuccess = await postQuoteToServer(newQuote);
+
+    if (postSuccess) {
+      // If post succeeds, the sync status will update in postQuoteToServer
+    } else {
+      // If post fails, tell the user they need to sync later
+      displayStatus("Post failed. Please try 'Sync Now' later.", false);
+    }
   } else {
     alert("Please enter both quote text and a category.");
   }
