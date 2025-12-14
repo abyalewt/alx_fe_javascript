@@ -92,6 +92,7 @@ function displayStatus(message, success = true) {
     syncStatus.classList.add("status-success");
   }
 
+  // This UI element serves as the mandatory notification system
   setTimeout(() => {
     syncStatus.style.display = "none";
     syncStatus.classList.remove("status-success");
@@ -159,14 +160,13 @@ async function postQuoteToServer(quote) {
 }
 
 // =========================================================
-// Syncing and Conflict Resolution (Renamed to syncQuotes)
+// Syncing and Conflict Resolution
 // =========================================================
 
 /**
  * Executes the data sync process: fetches server data, resolves conflicts, and saves locally.
  */
 async function syncQuotes() {
-  // Function renamed from syncData to syncQuotes
   displayStatus("Syncing quotes with server...", false);
   syncButton.disabled = true;
   let localQuoteCount = quotes.length;
@@ -199,20 +199,25 @@ async function syncQuotes() {
     populateCategories();
     filterQuotes();
 
-    let message = `Sync successful! ${quotes.length} total quotes. `;
+    // --- UPDATED SUCCESS MESSAGE LOGIC ---
+    let infoMessage = "";
     if (mergeCount > 0) {
-      message += `${mergeCount} server updates merged.`;
+      infoMessage += `${mergeCount} server updates merged.`;
     } else if (quotes.length > localQuoteCount) {
-      message += `Added ${quotes.length - localQuoteCount} new quotes.`;
+      infoMessage += `Added ${quotes.length - localQuoteCount} new quotes.`;
+    } else {
+      infoMessage = `Total quotes: ${quotes.length}.`;
     }
 
-    displayStatus(message, true);
+    // Include the exact required phrase
+    const finalMessage = `Quotes synced with server! ${infoMessage}`;
+    displayStatus(finalMessage, true);
   } catch (error) {
     console.error("Data Sync Error:", error);
     displayStatus(
       `Sync failed. Using local data. Error: ${error.message}`,
       false
-    );
+    ); // Error notification
   } finally {
     syncButton.disabled = false;
   }
@@ -318,6 +323,7 @@ async function addQuote() {
     const postSuccess = await postQuoteToServer(newQuote);
 
     if (!postSuccess) {
+      // This acts as a secondary notification for conflict/update status
       displayStatus("Post failed. Please try 'Sync Now' later.", false);
     }
   } else {
@@ -427,13 +433,13 @@ document.addEventListener("DOMContentLoaded", () => {
   filterQuotes();
 
   // 2. Attach Sync Event Listener
-  syncButton.addEventListener("click", syncQuotes); // Updated listener
+  syncButton.addEventListener("click", syncQuotes);
 
   // 3. Implement Periodic Sync
-  setInterval(syncQuotes, SYNC_INTERVAL); // Updated interval caller
+  setInterval(syncQuotes, SYNC_INTERVAL);
 
   // Initial sync check on load
-  syncQuotes(); // Updated initial call
+  syncQuotes();
 });
 
 // Other Event Listeners:
