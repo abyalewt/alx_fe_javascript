@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dynamic Quote Generator</title>
+    <style>
+      /* Basic Styling for readability */
+      body {
+        font-family: sans-serif;
+        text-align: center;
+        margin-top: 50px;
+      }
+      #quoteDisplay {
+        margin: 20px auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        max-width: 600px;
+        min-height: 80px;
+      }
+      #newQuote {
+        padding: 10px 20px;
+        background-color: #ff6565;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .quote-text {
+        font-style: italic;
+        font-size: 1.2em;
+        margin-bottom: 10px;
+      }
+      .quote-category {
+        font-weight: bold;
+        color: #555;
+      }
+      /* Style for the dynamically created form */
+      #addQuoteForm {
+        margin-top: 30px;
+        padding: 20px;
+        border: 1px solid #ddd;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+        text-align: left;
+      }
+      #addQuoteForm input,
+      #addQuoteForm button {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        box-sizing: border-box;
+      }
+      hr {
+        margin: 40px auto;
+        width: 50%;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Dynamic Quote Generator</h1>
+
+    <div id="quoteDisplay">
+      <p>Click "Show New Quote" to begin!</p>
+    </div>
+
+    <button id="newQuote">Show New Quote</button>
+
+    <hr/>
+
+    <div id="formContainer">
+      <button id="showFormButton">Add New Quote & Category</button>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
