@@ -18,7 +18,7 @@
     .quote-category { font-size: 0.9em; color: #555; margin-top: 5px; }
     #quoteFormContainer, #storageControls { margin-top: 30px; border-top: 1px dashed #ccc; padding-top: 20px; }
     .form-input { margin-bottom: 10px; padding: 8px; width: 250px; }
-    .form-button, .storage-button { 
+    .form-button, .storage-button, #categoryFilter { 
         padding: 10px 15px; 
         background-color: #4CAF50; 
         color: white; 
@@ -26,9 +26,21 @@
         cursor: pointer; 
         margin-right: 10px;
         margin-bottom: 10px;
+        border-radius: 5px;
     }
-    .form-button:hover, .storage-button:hover { opacity: 0.9; }
+    .storage-button.secondary {
+        background-color: #008CBA;
+    }
+    .form-button:hover, .storage-button:hover, #categoryFilter:hover { opacity: 0.9; }
     #lastQuoteDisplay { font-size: 0.8em; color: gray; }
+    #filterContainer { margin-bottom: 20px; }
+    #categoryFilter { 
+        color: black; 
+        background-color: #f0f0f0;
+        border: 1px solid #ccc;
+        width: 150px;
+        cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -39,6 +51,13 @@
     <p>Click "Show New Quote" to load content.</p>
   </div>
   
+  <div id="filterContainer">
+    <label for="categoryFilter">Filter by Category:</label>
+    <select id="categoryFilter" onchange="filterQuotes()">
+        <option value="all">All Categories</option>
+    </select>
+  </div>
+
   <button id="newQuote" class="storage-button">Show New Quote</button>
   
   <div id="lastQuoteDisplay"></div>
@@ -49,7 +68,7 @@
   <div id="storageControls">
     <button id="exportQuotes" class="storage-button">Export Quotes (JSON)</button>
     
-    <label for="importFile" class="storage-button" style="background-color: #008CBA;">
+    <label for="importFile" class="storage-button secondary">
         Import Quotes (JSON)
     </label>
     <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importFromJsonFile(event)" />
