@@ -6,7 +6,6 @@
 let quotes = [];
 
 // Simulate a server endpoint to fetch initial/synced data
-// NOTE: Using a static URL for simulation, as we cannot write state to a real backend.
 const SERVER_DATA_URL = "https://jsonplaceholder.typicode.com/posts?_limit=5";
 const SYNC_INTERVAL = 30000; // Sync every 30 seconds (30000ms)
 
@@ -80,14 +79,37 @@ function updateLastViewedDisplay() {
 }
 
 // =========================================================
-// Step 2 & 3: Syncing and Conflict Resolution
+// Step 1: Simulate Server Interaction (New Function)
 // =========================================================
 
 /**
- * Displays a status message to the user.
- * @param {string} message - The message to display.
- * @param {boolean} success - True for success (green), false for error/warning (orange).
+ * Fetches data from the simulated server and converts it to quote format.
+ * @returns {Promise<Array<Object>>} A promise that resolves to an array of quote objects.
  */
+async function fetchQuotesFromServer() {
+  const response = await fetch(SERVER_DATA_URL);
+  if (!response.ok) {
+    throw new Error(`Server response not OK (Status: ${response.status})`);
+  }
+
+  const serverPosts = await response.json();
+
+  // Map server posts (id, title, body) into quote objects (id, text, category)
+  const serverQuotes = serverPosts.map((post) => ({
+    // Capitalize the title and add a period for quote appearance
+    text: post.title.charAt(0).toUpperCase() + post.title.slice(1) + ".",
+    // Assign a category based on the userId for variety
+    category: post.userId % 2 === 0 ? "Server-A" : "Server-B",
+    id: `server-${post.id}`,
+  }));
+
+  return serverQuotes;
+}
+
+// =========================================================
+// Step 2 & 3: Syncing and Conflict Resolution (Updated)
+// =========================================================
+
 function displayStatus(message, success = true) {
   syncStatus.textContent = message;
   syncStatus.style.display = "block";
@@ -97,7 +119,6 @@ function displayStatus(message, success = true) {
     syncStatus.classList.add("status-success");
   }
 
-  // Hide after 5 seconds
   setTimeout(() => {
     syncStatus.style.display = "none";
     syncStatus.classList.remove("status-success");
@@ -105,62 +126,42 @@ function displayStatus(message, success = true) {
 }
 
 /**
- * Simulates fetching data from the server and performs conflict resolution.
+ * Executes the data sync process: fetches server data, resolves conflicts, and saves locally.
  */
 async function syncData() {
   displayStatus("Syncing data with server...", false);
   syncButton.disabled = true;
+  let localQuoteCount = quotes.length;
+  let mergeCount = 0;
 
   try {
-    const response = await fetch(SERVER_DATA_URL);
-    if (!response.ok) throw new Error("Server response not OK.");
-
-    const serverPosts = await response.json();
-
-    // Convert server posts (id, title, body) into quote objects (id, text, category)
-    const serverQuotes = serverPosts.map((post) => ({
-      text: post.title.charAt(0).toUpperCase() + post.title.slice(1) + ".",
-      category: post.userId % 2 === 0 ? "Server-A" : "Server-B",
-      id: `server-${post.id}`,
-    }));
+    const serverQuotes = await fetchQuotesFromServer(); // Call the new function
 
     // --- Conflict Resolution Strategy: Server Data Takes Precedence ---
 
-    // 1. Map existing local quotes by their ID for easy lookup
     const localQuoteMap = quotes.reduce((map, quote) => {
       map[quote.id] = quote;
       return map;
     }, {});
 
-    let localQuoteCount = quotes.length;
-    let mergeCount = 0;
-
-    // 2. Iterate through server quotes
+    // 1. Iterate through server quotes and merge/replace local data
     serverQuotes.forEach((serverQuote) => {
-      const existingQuote = localQuoteMap[serverQuote.id];
+      const index = quotes.findIndex((q) => q.id === serverQuote.id);
 
-      if (existingQuote) {
-        // Conflict: IDs match. Server takes precedence.
-        // Find and replace the local quote with the server quote
-        const index = quotes.findIndex((q) => q.id === serverQuote.id);
-        if (index !== -1) {
-          quotes[index] = serverQuote;
-          mergeCount++;
-        }
+      if (index !== -1) {
+        // Conflict: IDs match. Server takes precedence (replace local version).
+        quotes[index] = serverQuote;
+        mergeCount++;
       } else {
-        // No conflict: New quote from server.
+        // No conflict: New quote from server. Add it.
         quotes.push(serverQuote);
       }
     });
 
-    // Optional: Remove local-only quotes (quotes without a server ID) to simulate full server precedence
-    // If we only want server data, we would replace the array entirely: quotes = serverQuotes;
-    // For a merge, we keep local-only quotes that don't have server IDs.
-
-    // 3. Save the merged data
+    // 2. Save the merged data
     saveQuotes();
 
-    // 4. Update UI
+    // 3. Update UI
     populateCategories();
     filterQuotes();
 
@@ -379,7 +380,7 @@ window.filterQuotes = filterQuotes;
 // =========================================================
 
 document.addEventListener("DOMContentLoaded", () => {
-  // 1. Initial Load: Load local storage, populate categories, restore filter
+  // 1. Initial Load
   loadQuotes();
   populateCategories();
   restoreFilter();
@@ -390,10 +391,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // 2. Attach Sync Event Listener
   syncButton.addEventListener("click", syncData);
 
-  // 3. Implement Periodic Sync (Step 1)
+  // 3. Implement Periodic Sync
   setInterval(syncData, SYNC_INTERVAL);
 
-  // Initial sync check
+  // Initial sync check on load
   syncData();
 });
 
