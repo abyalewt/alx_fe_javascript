@@ -5,48 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dynamic Quote Generator</title>
   <style>
-    /* Basic styling for clarity */
-    body { font-family: sans-serif; padding: 20px; }
-    #quoteDisplay { 
-      border: 1px solid #ccc; 
-      padding: 15px; 
-      margin-bottom: 20px; 
-      min-height: 50px; 
-      background-color: #f9f9f9;
+    /* ... (Rest of styles remain the same) ... */
+    #syncStatus { 
+        margin-top: 10px; 
+        padding: 10px; 
+        border: 1px solid #ccc; 
+        background-color: #ffe0b2; /* Light orange */
+        color: #e65100; /* Dark orange */
+        font-weight: bold;
+        display: none; /* Hidden by default */
     }
-    .quote-text { font-size: 1.2em; font-style: italic; }
-    .quote-category { font-size: 0.9em; color: #555; margin-top: 5px; }
-    #quoteFormContainer, #storageControls { margin-top: 30px; border-top: 1px dashed #ccc; padding-top: 20px; }
-    .form-input { margin-bottom: 10px; padding: 8px; width: 250px; }
-    .form-button, .storage-button, #categoryFilter { 
-        padding: 10px 15px; 
-        background-color: #4CAF50; 
-        color: white; 
-        border: none; 
-        cursor: pointer; 
-        margin-right: 10px;
-        margin-bottom: 10px;
-        border-radius: 5px;
-    }
-    .storage-button.secondary {
-        background-color: #008CBA;
-    }
-    .form-button:hover, .storage-button:hover, #categoryFilter:hover { opacity: 0.9; }
-    #lastQuoteDisplay { font-size: 0.8em; color: gray; }
-    #filterContainer { margin-bottom: 20px; }
-    #categoryFilter { 
-        color: black; 
-        background-color: #f0f0f0;
-        border: 1px solid #ccc;
-        width: 150px;
-        cursor: pointer;
+    .status-success {
+        background-color: #c8e6c9; /* Light green */
+        color: #388e3c; /* Dark green */
     }
   </style>
 </head>
 <body>
   <h1>Dynamic Quote Generator</h1>
   
-  <h2>Current Quote:</h2>
+  <div id="syncStatus"></div> <h2>Current Quote:</h2>
   <div id="quoteDisplay">
     <p>Click "Show New Quote" to load content.</p>
   </div>
@@ -59,6 +37,7 @@
   </div>
 
   <button id="newQuote" class="storage-button">Show New Quote</button>
+  <button id="syncButton" class="storage-button secondary">Sync Now</button>
   
   <div id="lastQuoteDisplay"></div>
 
@@ -67,7 +46,6 @@
   <h2>Data Management (Local Storage & JSON)</h2>
   <div id="storageControls">
     <button id="exportQuotes" class="storage-button">Export Quotes (JSON)</button>
-    
     <label for="importFile" class="storage-button secondary">
         Import Quotes (JSON)
     </label>
